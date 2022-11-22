@@ -26,34 +26,34 @@ public class NcFnProcessor {
         this.path = path;
     }
 
-    public void process(AppFunction function, Map<String, String> fnArgs) {
+    public String process(AppFunction function, Map<String, String> fnArgs) {
         try (NetcdfFile ncFile = NetcdfFiles.open(path)) {
             if (null == function) {
                 log.info("Root group: {}", ncFile.getRootGroup());
             } else {
-                executeFunction(ncFile, function, fnArgs);
+                return executeFunction(ncFile, function, fnArgs);
             }
         } catch (IOException ioe) {
             log.error(String.format("Could not open %s", path), ioe);
         }
+        return null;
     }
 
-    private void executeFunction(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
+    private String executeFunction(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
 
         switch(function) {
             case READ_VARIABLE:
-                readVariable(ncFile, fnArgs);
-                break;
+                return readVariable(ncFile, fnArgs);
             case AVG_VARIABLE:
-                avgVariable(ncFile, fnArgs);
-                break;
+                return avgVariable(ncFile, fnArgs);
             default:
                 // TODO
         }
 
+        return null;
     }
 
-    private void readVariable(NetcdfFile ncFile, Map<String, String> fnArgs) {
+    private String readVariable(NetcdfFile ncFile, Map<String, String> fnArgs) {
 
         String varName = Objects.requireNonNull(fnArgs.get(FnReadVariableArg.VARIABLE.getArg()),
                 String.format("Missing argument '%s' for function '%s'", FnReadVariableArg.VARIABLE.getArg(),
@@ -67,19 +67,21 @@ public class NcFnProcessor {
         Variable v = ncFile.findVariable(varName);
         if (v == null) {
             log.warn("Unable to find variable '{}' in file.", varName);
-            return;
+            return null;
         }
         try {
             // sectionSpec is string specifying a potentially multidimensional array range of data, eg ":,1:2,0:3"
             Array data = v.read(sectionSpec);
             String arrayStr = Ncdump.printArray(data, varName, null);
             log.info(arrayStr);
+            return arrayStr;
         } catch (IOException | InvalidRangeException e) {
             log.error("Error reading variable " + varName, e);
         }
+        return null;
     }
     
-    private void avgVariable(NetcdfFile ncFile, Map<String, String> fnArgs) {
+    private String avgVariable(NetcdfFile ncFile, Map<String, String> fnArgs) {
 
         String varName = Objects.requireNonNull(fnArgs.get(FnAvgVariableArg.VARIABLE.getArg()),
                 String.format("Missing argument '%s' for function '%s'", FnAvgVariableArg.VARIABLE.getArg(),
@@ -92,7 +94,7 @@ public class NcFnProcessor {
         Variable v = ncFile.findVariable(varName);
         if (v == null) {
             log.warn("Unable to find variable '{}' in file.", varName);
-            return;
+            return null;
         }
         try {
             Array data = v.read(sectionSpec);
@@ -109,10 +111,11 @@ public class NcFnProcessor {
                 throw new IllegalStateException("Cannot average data type: " + dataType);
             }
             log.info("Average: " + avg);
-
+            return String.valueOf(avg);
         } catch (IOException | InvalidRangeException e) {
             log.error("Error averaging variable " + varName, e);
         }
+        return null;
     }
 
     private double averageIntegrals(IndexIterator ixIter) {

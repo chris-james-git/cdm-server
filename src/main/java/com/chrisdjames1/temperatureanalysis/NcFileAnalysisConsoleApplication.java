@@ -2,7 +2,6 @@ package com.chrisdjames1.temperatureanalysis;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,8 +19,9 @@ import java.util.regex.Pattern;
  * and providing section-spec inputs.
  */
 @Slf4j
-@SpringBootApplication
-public class NcFileAnalysisApplication {
+//@SpringBootApplication
+@Deprecated
+public class NcFileAnalysisConsoleApplication {
 
     private static final String APP_NAME = "ncfa";
 
@@ -38,7 +38,7 @@ public class NcFileAnalysisApplication {
     private static final Map<String, String> functionParams = new HashMap<>();
 
     public static void main(String[] args) {
-        SpringApplication.run(NcFileAnalysisApplication.class, args);
+        SpringApplication.run(NcFileAnalysisConsoleApplication.class, args);
         if (args.length == 0) {
             throw new IllegalStateException("Missing arguments!");
         }
