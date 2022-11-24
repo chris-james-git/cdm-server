@@ -127,8 +127,8 @@ public class NcFileAnalysisConsoleApplication {
             }
         }
 
-        var firstFileReader = NcFnProcessor.builder().path(rootParams.get(ARG_PATH)).build();
-        firstFileReader.process(function, functionParams);
+        var firstFileReader = new NcFnProcessor();
+        firstFileReader.openFileAndProcessFunction(rootParams.get(ARG_PATH), function, functionParams);
     }
 
 }

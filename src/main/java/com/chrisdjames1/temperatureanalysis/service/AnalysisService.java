@@ -12,13 +12,16 @@ import java.util.Map;
 @Service
 public class AnalysisService {
 
-    // TODO: Move to properties
-    private static final String PATH = "C:/Users/Chris James/Downloads/Land_and_Ocean_LatLong1.nc";
+    private final NetcdFileService netcdFileService;
+
+    public AnalysisService(NetcdFileService netcdFileService) {
+        this.netcdFileService = netcdFileService;
+    }
 
     public String readVariable(String variableName, String sectionSpec) {
 
-        var firstFileReader = NcFnProcessor.builder().path(PATH).build();
-        return firstFileReader.process(AppFunction.READ_VARIABLE,
+        var firstFileReader = new NcFnProcessor();
+        return firstFileReader.processFunction(netcdFileService.getNcFile(), AppFunction.READ_VARIABLE,
                 Map.of(FnReadVariableArg.VARIABLE.getArg(), variableName,
                         FnReadVariableArg.SECTION_SPEC.getArg(), sectionSpec));
     }

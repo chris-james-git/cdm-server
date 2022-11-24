@@ -1,7 +1,5 @@
 package com.chrisdjames1.temperatureanalysis;
 
-import lombok.Builder;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
@@ -19,24 +17,22 @@ import java.util.Objects;
 @Slf4j
 public class NcFnProcessor {
 
-    private final String path;
-
-    @Builder
-    public NcFnProcessor(@NonNull String path) {
-        this.path = path;
-    }
-
-    public String process(AppFunction function, Map<String, String> fnArgs) {
+    public String openFileAndProcessFunction(String path, AppFunction function, Map<String, String> fnArgs) {
         try (NetcdfFile ncFile = NetcdfFiles.open(path)) {
-            if (null == function) {
-                log.info("Root group: {}", ncFile.getRootGroup());
-            } else {
-                return executeFunction(ncFile, function, fnArgs);
-            }
+            return processFunction(ncFile, function, fnArgs);
         } catch (IOException ioe) {
             log.error(String.format("Could not open %s", path), ioe);
         }
         return null;
+    }
+
+    public String processFunction(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
+        if (null == function) {
+            String rootGroup = ncFile.getRootGroup().toString();
+            log.info("Root group: {}", rootGroup);
+            return rootGroup;
+        }
+        return executeFunction(ncFile, function, fnArgs);
     }
 
     private String executeFunction(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
