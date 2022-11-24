@@ -26,26 +26,21 @@ public class NcFnProcessor {
 
     private boolean doLog = true;
 
-    public String openFileAndProcessFunction(String path, AppFunction function, Map<String, String> fnArgs) {
+    public void openFileAndProcessFunction(String path, AppFunction function, Map<String, String> fnArgs) {
         try (NetcdfFile ncFile = NetcdfFiles.open(path)) {
-            return processFunction(ncFile, function, fnArgs);
+            processFunction(ncFile, function, fnArgs);
         } catch (IOException e) {
             throw new RuntimeException("Could not open " + path, e);
         }
     }
 
     public String processFunction(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
-        if (null == function) {
-            String rootGroup = ncFile.getRootGroup().toString();
-            info("Root group: {}", rootGroup);
-            return rootGroup;
-        }
-        return executeFunction(ncFile, function, fnArgs);
-    }
-
-    private String executeFunction(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
 
         switch(function) {
+            case READ_ROOT_GROUP:
+                String rootGroup = ncFile.getRootGroup().toString();
+                info("Root group: {}", rootGroup);
+                return rootGroup;
             case READ_VARIABLE:
                 return readVariable(ncFile, fnArgs);
             case AVG_VARIABLE:

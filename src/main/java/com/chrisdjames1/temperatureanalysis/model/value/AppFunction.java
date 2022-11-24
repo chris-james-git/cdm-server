@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Getter
 public enum AppFunction {
+
+    READ_ROOT_GROUP("read-root-group", Set.of()),
     READ_VARIABLE("read-variable", FnReadVariableArg.allArgs()),
     AVG_VARIABLE("avg-variable", FnAvgVariableArg.allArgs());
 

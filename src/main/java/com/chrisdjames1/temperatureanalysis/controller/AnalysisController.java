@@ -14,7 +14,12 @@ public class AnalysisController {
 
     private AnalysisService analysisService;
 
-    @GetMapping(path = "read")
+    @GetMapping(path = "read/root")
+    public ResponseEntity<String> readRoot() {
+        return new ResponseEntity<>(analysisService.readRootGroup(), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "read/variable")
     public ResponseEntity<String> readVariable(@RequestParam(name = "variable") String variable,
                                                @RequestParam(name = "section-spec") String sectionSpec) {
 
