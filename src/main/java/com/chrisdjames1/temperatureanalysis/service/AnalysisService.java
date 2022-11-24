@@ -20,7 +20,7 @@ public class AnalysisService {
 
     public String readVariable(String variableName, String sectionSpec) {
 
-        var firstFileReader = new NcFnProcessor();
+        var firstFileReader = new NcFnProcessor(false);
         return firstFileReader.processFunction(netcdFileService.getNcFile(), AppFunction.READ_VARIABLE,
                 Map.of(FnReadVariableArg.VARIABLE.getArg(), variableName,
                         FnReadVariableArg.SECTION_SPEC.getArg(), sectionSpec));

@@ -1,5 +1,7 @@
 package com.chrisdjames1.temperatureanalysis;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
@@ -15,21 +17,24 @@ import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
+@AllArgsConstructor
+@NoArgsConstructor
 public class NcFnProcessor {
+
+    private boolean doLog = true;
 
     public String openFileAndProcessFunction(String path, AppFunction function, Map<String, String> fnArgs) {
         try (NetcdfFile ncFile = NetcdfFiles.open(path)) {
             return processFunction(ncFile, function, fnArgs);
-        } catch (IOException ioe) {
-            log.error(String.format("Could not open %s", path), ioe);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not open " + path, e);
         }
-        return null;
     }
 
     public String processFunction(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
         if (null == function) {
             String rootGroup = ncFile.getRootGroup().toString();
-            log.info("Root group: {}", rootGroup);
+            info("Root group: {}", rootGroup);
             return rootGroup;
         }
         return executeFunction(ncFile, function, fnArgs);
@@ -58,23 +63,21 @@ public class NcFnProcessor {
                 String.format("Missing argument '%s' for function '%s'", FnReadVariableArg.SECTION_SPEC.getArg(),
                         AppFunction.READ_VARIABLE.getFunctionArgValue()));
 
-        log.info("Attempting to read variable '{}' with section-spec '{}'", varName, sectionSpec);
+        info("Attempting to read variable '{}' with section-spec '{}'", varName, sectionSpec);
 
         Variable v = ncFile.findVariable(varName);
         if (v == null) {
-            log.warn("Unable to find variable '{}' in file.", varName);
-            return null;
+            throw new RuntimeException("Unable fo find variable " + varName);
         }
         try {
             // sectionSpec is string specifying a potentially multidimensional array range of data, eg ":,1:2,0:3"
             Array data = v.read(sectionSpec);
             String arrayStr = Ncdump.printArray(data, varName, null);
-            log.info(arrayStr);
+            info(arrayStr);
             return arrayStr;
         } catch (IOException | InvalidRangeException e) {
-            log.error("Error reading variable " + varName, e);
+            throw new RuntimeException("Error reading variable " + varName, e);
         }
-        return null;
     }
     
     private String avgVariable(NetcdfFile ncFile, Map<String, String> fnArgs) {
@@ -86,11 +89,10 @@ public class NcFnProcessor {
                 String.format("Missing argument '%s' for function '%s'", FnAvgVariableArg.SECTION_SPEC.getArg(),
                         AppFunction.READ_VARIABLE.getFunctionArgValue()));
 
-        log.info("Attempting to average variable '{}' with section-spec '{}'", varName, sectionSpec);
+        info("Attempting to average variable '{}' with section-spec '{}'", varName, sectionSpec);
         Variable v = ncFile.findVariable(varName);
         if (v == null) {
-            log.warn("Unable to find variable '{}' in file.", varName);
-            return null;
+            throw new RuntimeException("Unable fo find variable " + varName);
         }
         try {
             Array data = v.read(sectionSpec);
@@ -106,12 +108,11 @@ public class NcFnProcessor {
             } else {
                 throw new IllegalStateException("Cannot average data type: " + dataType);
             }
-            log.info("Average: " + avg);
+            info("Average: " + avg);
             return String.valueOf(avg);
         } catch (IOException | InvalidRangeException e) {
-            log.error("Error averaging variable " + varName, e);
+            throw new RuntimeException("Error averaging variable " + varName, e);
         }
-        return null;
     }
 
     private double averageIntegrals(IndexIterator ixIter) {
@@ -152,5 +153,8 @@ public class NcFnProcessor {
         return total / count;
     }
 
+    private void info(String message, Object... args) {
+        if (doLog) log.info(message, args);
+    }
 
 }
