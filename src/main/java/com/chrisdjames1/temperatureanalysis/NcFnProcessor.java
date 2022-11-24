@@ -1,5 +1,8 @@
 package com.chrisdjames1.temperatureanalysis;
 
+import com.chrisdjames1.temperatureanalysis.model.value.AppFunction;
+import com.chrisdjames1.temperatureanalysis.model.value.FnAvgVariableArg;
+import com.chrisdjames1.temperatureanalysis.model.value.FnReadVariableArg;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +75,8 @@ public class NcFnProcessor {
         try {
             // sectionSpec is string specifying a potentially multidimensional array range of data, eg ":,1:2,0:3"
             Array data = v.read(sectionSpec);
-            String arrayStr = Ncdump.printArray(data, varName, null);
+            String arrayStr = Ncdump.printArray(data, null, null).replaceAll("\\{", "[")
+                    .replaceAll("}", "]");
             info(arrayStr);
             return arrayStr;
         } catch (IOException | InvalidRangeException e) {

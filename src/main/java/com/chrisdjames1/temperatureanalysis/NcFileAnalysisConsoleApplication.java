@@ -1,5 +1,8 @@
 package com.chrisdjames1.temperatureanalysis;
 
+import com.chrisdjames1.temperatureanalysis.model.value.AppFunction;
+import com.chrisdjames1.temperatureanalysis.model.value.FnAvgVariableArg;
+import com.chrisdjames1.temperatureanalysis.model.value.FnReadVariableArg;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 

@@ -1,7 +1,7 @@
 package com.chrisdjames1.temperatureanalysis.service;
 
-import com.chrisdjames1.temperatureanalysis.AppFunction;
-import com.chrisdjames1.temperatureanalysis.FnReadVariableArg;
+import com.chrisdjames1.temperatureanalysis.model.value.AppFunction;
+import com.chrisdjames1.temperatureanalysis.model.value.FnReadVariableArg;
 import com.chrisdjames1.temperatureanalysis.NcFnProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

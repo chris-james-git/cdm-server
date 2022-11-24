@@ -14,7 +14,7 @@ public class AnalysisController {
 
     private AnalysisService analysisService;
 
-    @GetMapping(path = "variable")
+    @GetMapping(path = "read")
     public ResponseEntity<String> readVariable(@RequestParam(name = "variable") String variable,
                                                @RequestParam(name = "section-spec") String sectionSpec) {
 

@@ -1,4 +1,4 @@
-package com.chrisdjames1.temperatureanalysis;
+package com.chrisdjames1.temperatureanalysis.model.value;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
