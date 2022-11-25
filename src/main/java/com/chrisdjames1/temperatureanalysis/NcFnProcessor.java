@@ -28,13 +28,13 @@ public class NcFnProcessor {
 
     public void openFileAndProcessFunction(String path, AppFunction function, Map<String, String> fnArgs) {
         try (NetcdfFile ncFile = NetcdfFiles.open(path)) {
-            processFunction(ncFile, function, fnArgs);
+            processFunctionToString(ncFile, function, fnArgs);
         } catch (IOException e) {
             throw new RuntimeException("Could not open " + path, e);
         }
     }
 
-    public String processFunction(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
+    public String processFunctionToString(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
 
         switch(function) {
             case READ_ROOT_GROUP:
@@ -42,18 +42,25 @@ public class NcFnProcessor {
                 info("Root group: {}", rootGroup);
                 return rootGroup;
             case READ_VARIABLE:
-                return readVariable(ncFile, fnArgs);
+                return readVariableToJsonArray(ncFile, fnArgs);
             case AVG_VARIABLE:
                 return avgVariable(ncFile, fnArgs);
             default:
-                // TODO
+                throw new RuntimeException("Unsupported function: " + function.name());
         }
-
-        return null;
     }
 
-    private String readVariable(NetcdfFile ncFile, Map<String, String> fnArgs) {
+    private String readVariableToJsonArray(NetcdfFile ncFile, Map<String, String> fnArgs) {
 
+        Array data = readVariableToArray(ncFile, fnArgs);
+        String arrayStr = Ncdump.printArray(data, null, null).replaceAll("\\{", "[")
+                .replaceAll("}", "]");
+        info(arrayStr);
+
+        return arrayStr;
+    }
+
+    public Array readVariableToArray(NetcdfFile ncFile, Map<String, String> fnArgs) {
         String varName = Objects.requireNonNull(fnArgs.get(FnReadVariableArg.VARIABLE.getArg()),
                 String.format("Missing argument '%s' for function '%s'", FnReadVariableArg.VARIABLE.getArg(),
                         AppFunction.READ_VARIABLE.getFunctionArgValue()));
@@ -69,11 +76,7 @@ public class NcFnProcessor {
         }
         try {
             // sectionSpec is string specifying a potentially multidimensional array range of data, eg ":,1:2,0:3"
-            Array data = v.read(sectionSpec);
-            String arrayStr = Ncdump.printArray(data, null, null).replaceAll("\\{", "[")
-                    .replaceAll("}", "]");
-            info(arrayStr);
-            return arrayStr;
+            return v.read(sectionSpec);
         } catch (IOException | InvalidRangeException e) {
             throw new RuntimeException("Error reading variable " + varName, e);
         }
