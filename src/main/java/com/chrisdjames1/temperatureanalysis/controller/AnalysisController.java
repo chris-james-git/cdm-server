@@ -31,4 +31,12 @@ public class AnalysisController {
 
         return new ResponseEntity<>(analysisService.readVariableToString(variable, sectionSpec), HttpStatus.OK);
     }
+
+    @GetMapping(path = "read/variable/xlsx")
+    public ResponseEntity<String> readVariable2dToXlsx(@RequestParam(name = "variable") String variable,
+            @RequestParam(name = "section-spec") String sectionSpec) {
+
+        return new ResponseEntity<>(analysisService.readVariable2dToExcel(variable, sectionSpec), HttpStatus.OK);
+    }
+
 }

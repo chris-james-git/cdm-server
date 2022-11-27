@@ -16,4 +16,7 @@ public class CdmArray {
 
     private DataType dataType;
 
+    @Builder.Default
+    private List<Object> data = new ArrayList<>();
+
 }

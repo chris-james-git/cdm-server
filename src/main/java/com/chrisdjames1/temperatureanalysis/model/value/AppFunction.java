@@ -16,6 +16,7 @@ public enum AppFunction {
 
     READ_ROOT_GROUP("read-root-group", Set.of()),
     READ_VARIABLE("read-variable", FnReadVariableArg.allArgs()),
+    READ_VARIABLE_2D_TO_EXCEL("read-variable-2d-to-excel", FnReadVariableArg.allArgs()),
     AVG_VARIABLE("avg-variable", FnAvgVariableArg.allArgs());
 
     private static final Map<String, AppFunction> LOOKUP;
