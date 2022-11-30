@@ -11,6 +11,7 @@ import com.chrisdjames1.temperatureanalysis.model.cdm.tx.CdmDataAccessLayerTrans
 import com.chrisdjames1.temperatureanalysis.model.value.AppFunction;
 import com.chrisdjames1.temperatureanalysis.model.value.FnReadVariableArg;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import ucar.nc2.Group;
 import ucar.nc2.NetcdfFile;
@@ -35,11 +36,19 @@ public class AnalysisService {
                 createReadVariableArgs(variableName, sectionSpec));
     }
 
-    public String readVariable2dToExcel(String variableName, String sectionSpec, Integer columnIndexFor1D) {
+    public String readVariable2dToExcel(String variableName, String sectionSpec, @Nullable Integer columnIndexFor1D,
+            @Nullable String fileName) {
+
+        // Sanitize fileName
+        if (fileName != null && !fileName.equals("")) {
+            if (!fileName.matches("^\\w+\\.xlsx$")) {
+                throw new IllegalArgumentException("Illegal filename. Must be a word followed by .xlsx");
+            }
+        }
 
         var processor = new NcFnProcessor(true);
-        return processor.readVariable2DToExcel(netcdFileService.getNcFile(), variableName, sectionSpec,
-                columnIndexFor1D);
+        return processor.readVariable2dToExcel(netcdFileService.getNcFile(), variableName, sectionSpec,
+                columnIndexFor1D, fileName);
     }
 
     public CdmGroup readRootGroupSchema() {

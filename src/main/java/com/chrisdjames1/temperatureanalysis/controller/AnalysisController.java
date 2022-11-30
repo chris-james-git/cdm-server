@@ -35,10 +35,11 @@ public class AnalysisController {
     @GetMapping(path = "read/variable/xlsx")
     public ResponseEntity<String> readVariable2dToXlsx(@RequestParam(name = "variable") String variable,
             @RequestParam(name = "section-spec") String sectionSpec,
-            @RequestParam(name = "column-index-for-1d", required = false) Integer columnIndexFor1D) {
+            @RequestParam(name = "column-index-for-1d", required = false) Integer columnIndexFor1D,
+            @RequestParam(name = "file-name", required = false) String fileName) {
 
-        return new ResponseEntity<>(analysisService.readVariable2dToExcel(variable, sectionSpec, columnIndexFor1D),
-                HttpStatus.OK);
+        return new ResponseEntity<>(analysisService.readVariable2dToExcel(variable, sectionSpec, columnIndexFor1D,
+                fileName), HttpStatus.OK);
     }
 
 }

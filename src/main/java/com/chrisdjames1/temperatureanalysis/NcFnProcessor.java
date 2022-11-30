@@ -79,8 +79,8 @@ public class NcFnProcessor {
         return arrayStr;
     }
 
-    public String readVariable2DToExcel(NetcdfFile ncFile, String variableName, String sectionSpec,
-            @Nullable Integer columnIndexFor1D) {
+    public String readVariable2dToExcel(NetcdfFile ncFile, String variableName, String sectionSpec,
+            @Nullable Integer columnIndexFor1d, @Nullable String fileName) {
 
         Array data = readVariableToArray(ncFile, variableName, sectionSpec);
 
@@ -90,7 +90,7 @@ public class NcFnProcessor {
         if (shapeDimensionCount < 1 || shapeDimensionCount > 2) {
             throw new IllegalArgumentException("Shape is not 1D or 2D. Excel output only supports 1D or 2D data.");
         }
-        if (shapeDimensionCount == 1 && shape.length > 2 && columnIndexFor1D == null) {
+        if (shapeDimensionCount == 1 && shape.length > 2 && columnIndexFor1d == null) {
             throw new IllegalArgumentException("Shape is 1D but there are more than 2 dimensions and no " +
                     "column-index-for-1D was provided. Please specify the index from the section-spec to use as the " +
                     "column in the 1D dataset.");
@@ -110,24 +110,24 @@ public class NcFnProcessor {
         int rowCategoryIndex = ShapeUtils.findNthShapeDimensionIndex(shape, 1);
         if (rowCategoryIndex == -1) {
             throw new IllegalStateException("Unable to locate row category index.");
-        } else if (shapeDimensionCount == 1 && columnIndexFor1D != null && rowCategoryIndex == columnIndexFor1D) {
+        } else if (shapeDimensionCount == 1 && columnIndexFor1d != null && rowCategoryIndex == columnIndexFor1d) {
             throw new IllegalArgumentException("1D row data identified in index " + rowCategoryIndex + " which is " +
                     "the same as the column-index-for-1D. Please provide a different value for column-index-for-1D " +
                     "or change the configuration of the section-spec.");
         }
 
-        if (columnIndexFor1D == null && shape.length == 2 && shapeDimensionCount == 1) {
+        if (columnIndexFor1d == null && shape.length == 2 && shapeDimensionCount == 1) {
             // Support null columnIndexFor1D when there are only 2 dimensions
-            columnIndexFor1D = rowCategoryIndex == 0 ? 1 : 0;
-        } else if (columnIndexFor1D == null && shape.length == 1) {
+            columnIndexFor1d = rowCategoryIndex == 0 ? 1 : 0;
+        } else if (columnIndexFor1d == null && shape.length == 1) {
             // Support single dimension data
-            columnIndexFor1D = 1; // We will add a "Value" dimension below for the column
+            columnIndexFor1d = 1; // We will add a "Value" dimension below for the column
         }
 
-        assert columnIndexFor1D != null;
+        assert columnIndexFor1d != null;
 
         int columnCategoryIndex = shapeDimensionCount == 2 ?
-                ShapeUtils.findNthShapeDimensionIndex(shape, 2) : columnIndexFor1D;
+                ShapeUtils.findNthShapeDimensionIndex(shape, 2) : columnIndexFor1d;
         if (columnCategoryIndex == -1) {
             throw new IllegalStateException("Unable to locate header category index.");
         }
@@ -299,7 +299,8 @@ public class NcFnProcessor {
             // Write the content to a temporary file
             File currDir = new File(".");
             String path = currDir.getAbsolutePath();
-            String fileLocation = path.substring(0, path.length() - 1) + "temp.xlsx";
+            String fileLocation = path.substring(0, path.length() - 1) +
+                    (fileName != null && !fileName.equals("") ? fileName : "temp.xlsx");
 
             FileOutputStream outputStream = new FileOutputStream(fileLocation);
             workbook.write(outputStream);
