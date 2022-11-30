@@ -18,6 +18,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.lang.Nullable;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
 import ucar.ma2.IndexIterator;
@@ -79,14 +80,21 @@ public class NcFnProcessor {
         return arrayStr;
     }
 
-    public String readVariable2DToExcel(NetcdfFile ncFile, String variableName, String sectionSpec) {
+    public String readVariable2DToExcel(NetcdfFile ncFile, String variableName, String sectionSpec,
+            @Nullable Integer columnIndexFor1D) {
 
         Array data = readVariableToArray(ncFile, variableName, sectionSpec);
 
         int[] shape = data.getShape();
+        int shapeDimensionCount = ShapeUtils.countShapeDimensions(shape);
 
-        if (ShapeUtils.countShapeDimensions(shape) != 2) {
-            throw new IllegalArgumentException("Shape is not 2D. Excel output only supports 2D data.");
+        if (shapeDimensionCount < 1 || shapeDimensionCount > 2) {
+            throw new IllegalArgumentException("Shape is not 1D or 2D. Excel output only supports 1D or 2D data.");
+        }
+        if (shapeDimensionCount == 1 && shape.length > 2 && columnIndexFor1D == null) {
+            throw new IllegalArgumentException("Shape is 1D but there are more than 2 dimensions and no " +
+                    "column-index-for-1D was provided. Please specify the index from the section-spec to use as the " +
+                    "column in the 1D dataset.");
         }
 
         String[] sectionSpecArr = sectionSpec.split(",");
@@ -103,14 +111,27 @@ public class NcFnProcessor {
         int rowCategoryIndex = ShapeUtils.findNthShapeDimensionIndex(shape, 1);
         if (rowCategoryIndex == -1) {
             throw new IllegalStateException("Unable to locate row category index.");
+        } else if (shapeDimensionCount == 1 && columnIndexFor1D != null && rowCategoryIndex == columnIndexFor1D) {
+            throw new IllegalArgumentException("1D row data identified in index " + rowCategoryIndex + " which is " +
+                    "the same as the column-index-for-1D. Please provide a different value for column-index-for-1D " +
+                    "or change the configuration of the section-spec.");
         }
-        int colulmnCategoryIndex = ShapeUtils.findNthShapeDimensionIndex(shape, 2);
-        if (colulmnCategoryIndex == -1) {
+
+        if (columnIndexFor1D == null && shape.length == 2 && shapeDimensionCount == 1) {
+            // Support null columnIndexFor1D when there are only 2 dimensions
+            columnIndexFor1D = rowCategoryIndex == 0 ? 1 : 0;
+        }
+
+        assert columnIndexFor1D != null;
+
+        int columnCategoryIndex = shapeDimensionCount == 2 ?
+                ShapeUtils.findNthShapeDimensionIndex(shape, 2) : columnIndexFor1D;
+        if (columnCategoryIndex == -1) {
             throw new IllegalStateException("Unable to locate header category index.");
         }
         ImmutableList<Dimension> dimensions = v.getDimensions();
         String rowCategory = dimensions.get(rowCategoryIndex).getName();
-        String columnCategory = dimensions.get(colulmnCategoryIndex).getName();
+        String columnCategory = dimensions.get(columnCategoryIndex).getName();
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet(variableName);
@@ -179,7 +200,7 @@ public class NcFnProcessor {
                 fixedDimensionsTitleCell.setCellValue("Fixed Dimensions:");
                 fixedDimensionsTitleCell.setCellStyle(attrHeaderStyle);
                 for (int i = 0; i < dimensions.size(); i++) {
-                    if (i != rowCategoryIndex && i != colulmnCategoryIndex) {
+                    if (i != rowCategoryIndex && i != columnCategoryIndex) {
                         Row fixedDimension = sheet.createRow(rowCount++);
                         Cell fixedDimensionCell = fixedDimension.createCell(0);
                         fixedDimensionCell.setCellValue(dimensions.get(i).getName());
@@ -205,9 +226,9 @@ public class NcFnProcessor {
             headerCell.setCellStyle(headerStyle);
 
             // Print the column category labels
-            for (int col = 0; col < shape[colulmnCategoryIndex]; col++) {
+            for (int col = 0; col < shape[columnCategoryIndex]; col++) {
                 headerCell = header.createCell(col + 1);
-                headerCell.setCellValue(sectionStarts.get(colulmnCategoryIndex) + col);
+                headerCell.setCellValue(sectionStarts.get(columnCategoryIndex) + col);
                 headerCell.setCellStyle(headerStyle);
             }
 
@@ -229,7 +250,7 @@ public class NcFnProcessor {
                 Object next = ixIter.next();
                 int[] counter = ixIter.getCurrentCounter();
                 int rowOffset = counter[rowCategoryIndex];
-                int colOffset = counter[colulmnCategoryIndex];
+                int colOffset = counter[columnCategoryIndex];
                 Row dataRow = dataRows.get(rowOffset + rowCount);
                 Cell dataCell = dataRow.createCell(colOffset + 1);
 

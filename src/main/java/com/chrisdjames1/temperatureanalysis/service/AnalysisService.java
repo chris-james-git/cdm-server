@@ -35,10 +35,11 @@ public class AnalysisService {
                 createReadVariableArgs(variableName, sectionSpec));
     }
 
-    public String readVariable2dToExcel(String variableName, String sectionSpec) {
+    public String readVariable2dToExcel(String variableName, String sectionSpec, Integer columnIndexFor1D) {
 
         var processor = new NcFnProcessor(true);
-        return processor.readVariable2DToExcel(netcdFileService.getNcFile(), variableName, sectionSpec);
+        return processor.readVariable2DToExcel(netcdFileService.getNcFile(), variableName, sectionSpec,
+                columnIndexFor1D);
     }
 
     public CdmGroup readRootGroupSchema() {
