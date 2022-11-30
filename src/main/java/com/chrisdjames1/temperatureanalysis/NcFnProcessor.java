@@ -6,7 +6,6 @@ import com.chrisdjames1.temperatureanalysis.model.value.AppFunction;
 import com.chrisdjames1.temperatureanalysis.model.value.FnAvgVariableArg;
 import com.chrisdjames1.temperatureanalysis.model.value.FnReadVariableArg;
 import com.chrisdjames1.temperatureanalysis.util.ShapeUtils;
-import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -120,6 +119,9 @@ public class NcFnProcessor {
         if (columnIndexFor1D == null && shape.length == 2 && shapeDimensionCount == 1) {
             // Support null columnIndexFor1D when there are only 2 dimensions
             columnIndexFor1D = rowCategoryIndex == 0 ? 1 : 0;
+        } else if (columnIndexFor1D == null && shape.length == 1) {
+            // Support single dimension data
+            columnIndexFor1D = 1; // We will add a "Value" dimension below for the column
         }
 
         assert columnIndexFor1D != null;
@@ -129,7 +131,15 @@ public class NcFnProcessor {
         if (columnCategoryIndex == -1) {
             throw new IllegalStateException("Unable to locate header category index.");
         }
-        ImmutableList<Dimension> dimensions = v.getDimensions();
+        List<Dimension> dimensions = new ArrayList<>(v.getDimensions());
+        if (shape.length == 1) {
+            if (dimensions.size() != 1) {
+                throw new IllegalStateException("Unexpected state: shape length 1 and dimensions size != 1");
+            }
+            // Need to fake a dimension for the "Value" column
+            dimensions.add(new Dimension("", 1));
+        }
+
         String rowCategory = dimensions.get(rowCategoryIndex).getName();
         String columnCategory = dimensions.get(columnCategoryIndex).getName();
 
@@ -224,10 +234,12 @@ public class NcFnProcessor {
             headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             headerStyle.setFont(headerFont);
 
-            Row columnCategoryHeader = sheet.createRow(rowCount++);
-            Cell columnCategoryCell = columnCategoryHeader.createCell(1);
-            columnCategoryCell.setCellValue(columnCategory);
-            columnCategoryCell.setCellStyle(headerStyle);
+            if (columnCategory != null && !columnCategory.equals("")) {
+                Row columnCategoryHeader = sheet.createRow(rowCount++);
+                Cell columnCategoryCell = columnCategoryHeader.createCell(1);
+                columnCategoryCell.setCellValue(columnCategory);
+                columnCategoryCell.setCellStyle(headerStyle);
+            }
 
             Row header = sheet.createRow(rowCount++);
             Cell headerCell = header.createCell(0);
@@ -235,9 +247,14 @@ public class NcFnProcessor {
             headerCell.setCellStyle(headerStyle);
 
             // Print the column category labels
-            for (int col = 0; col < shape[columnCategoryIndex]; col++) {
+            int max = shapeDimensionCount > 1 ? shape[columnCategoryIndex] : 1;
+            for (int col = 0; col < max; col++) {
                 headerCell = header.createCell(col + 1);
-                headerCell.setCellValue(sectionStarts.get(columnCategoryIndex) + col);
+                if (sectionStarts.size() >= columnCategoryIndex + 1) {
+                    headerCell.setCellValue(sectionStarts.get(columnCategoryIndex) + col);
+                } else {
+                    headerCell.setCellValue("Value");
+                }
                 headerCell.setCellStyle(headerStyle);
             }
 
@@ -259,7 +276,7 @@ public class NcFnProcessor {
                 Object next = ixIter.next();
                 int[] counter = ixIter.getCurrentCounter();
                 int rowOffset = counter[rowCategoryIndex];
-                int colOffset = counter[columnCategoryIndex];
+                int colOffset = counter.length >= columnCategoryIndex + 1 ? counter[columnCategoryIndex] : 0;
                 Row dataRow = dataRows.get(rowOffset + rowCount);
                 Cell dataCell = dataRow.createCell(colOffset + 1);
 
