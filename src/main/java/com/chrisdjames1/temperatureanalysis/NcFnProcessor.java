@@ -195,19 +195,28 @@ public class NcFnProcessor {
 
                 // 2D data with more than 2 variable dimensions to pick from.
                 // List the fixed dimensions
-                Row fixedDimensionsTitle = sheet.createRow(rowCount++);
-                Cell fixedDimensionsTitleCell = fixedDimensionsTitle.createCell(0);
-                fixedDimensionsTitleCell.setCellValue("Fixed Dimensions:");
-                fixedDimensionsTitleCell.setCellStyle(attrHeaderStyle);
+                Row fixedDimensionsHeader = sheet.createRow(rowCount++);
+                Cell fixedDimensionHeaderCell = fixedDimensionsHeader.createCell(0);
+                fixedDimensionHeaderCell.setCellValue("Fixed Dimension");
+                fixedDimensionHeaderCell.setCellStyle(attrHeaderStyle);
+                Cell fixedDimensionValueHeaderCell = fixedDimensionsHeader.createCell(1);
+                fixedDimensionValueHeaderCell.setCellValue("Value");
+                fixedDimensionValueHeaderCell.setCellStyle(attrHeaderStyle);
                 for (int i = 0; i < dimensions.size(); i++) {
                     if (i != rowCategoryIndex && i != columnCategoryIndex) {
                         Row fixedDimension = sheet.createRow(rowCount++);
-                        Cell fixedDimensionCell = fixedDimension.createCell(0);
-                        fixedDimensionCell.setCellValue(dimensions.get(i).getName());
-                        fixedDimensionCell.setCellStyle(attrStyle);
+                        Cell fixedDimensionNameCell = fixedDimension.createCell(0);
+                        fixedDimensionNameCell.setCellValue(dimensions.get(i).getName());
+                        fixedDimensionNameCell.setCellStyle(attrStyle);
+                        Cell fixedDimensionValueCell = fixedDimension.createCell(1);
+                        fixedDimensionValueCell.setCellValue(sectionStarts.get(i));
+                        fixedDimensionValueCell.setCellStyle(attrStyle);
                     }
                 }
             }
+
+            // blank row
+            rowCount++;
 
             // Print the column headers
             CellStyle headerStyle = workbook.createCellStyle();
@@ -254,6 +263,7 @@ public class NcFnProcessor {
                 Row dataRow = dataRows.get(rowOffset + rowCount);
                 Cell dataCell = dataRow.createCell(colOffset + 1);
 
+                // NaN converts to the Excel error value #NUM!
                 switch (dataType) {
                     case DOUBLE:
                         dataCell.setCellValue((Double) next);
