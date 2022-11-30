@@ -79,6 +79,23 @@ public class NcFnProcessor {
         return arrayStr;
     }
 
+    /**
+     * Reads a 1D or 2D query on an NC file into to a table in an XLSX file.
+     *
+     * @param ncFile A {@link NetcdfFile} instance.
+     * @param variableName Name of the target variable in the {@link NetcdfFile}.
+     * @param sectionSpec 1D or 2D configured CSV ranges for the target variable e.g "0:2073,141:142,0:0".
+     * @param columnIndexFor1d Index of the dimension to use as the label for the value column when only one dimension
+     *                         has a range in the {@code sectionSpec}. Cannot be the same as the index of the dimension
+     *                         that has the range. Has no effect on the data output - just affects the column label. For
+     *                         example, if {@code sectionSpec} is "0:2073,141:141,32:32" then the rows will represent
+     *                         the first dimension (index 0) because that dimension has range 0:2073. If
+     *                         {@code columnIndexFor1d} is 1 then the columns will be titled with the name of the second
+     *                         dimension (e.g. latitude) and the column header will be the value of that dimension, i.e
+     *                         "141".
+     * @param fileName (optional) Name to give the generated XLSX file.
+     * @return The path to the generated XLSX file.
+     */
     public String readVariable2dToExcel(NetcdfFile ncFile, String variableName, String sectionSpec,
             @Nullable Integer columnIndexFor1d, @Nullable String fileName) {
 
