@@ -1,6 +1,5 @@
 package com.chrisdjames1.temperatureanalysis.service;
 
-import com.chrisdjames1.temperatureanalysis.NcFnProcessor;
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmAttribute;
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmDataset;
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmDimension;
@@ -27,18 +26,19 @@ public class AnalysisService {
     private final NetcdFileService netcdFileService;
     private final ReadVariableToExcelService readVariableToExcelService;
     private final AverageVariableToExcelService averageVariableToExcelService;
+    private final FunctionProcessorService functionProcessorService;
 
     public AnalysisService(NetcdFileService netcdFileService, ReadVariableToExcelService readVariableToExcelService,
-            AverageVariableToExcelService averageVariableToExcelService) {
+            AverageVariableToExcelService averageVariableToExcelService,
+            FunctionProcessorService functionProcessorService) {
         this.netcdFileService = netcdFileService;
         this.readVariableToExcelService = readVariableToExcelService;
         this.averageVariableToExcelService = averageVariableToExcelService;
+        this.functionProcessorService = functionProcessorService;
     }
 
     public String readVariableToString(String variableName, String sectionSpec) {
-
-        var processor = new NcFnProcessor(false);
-        return processor.processFunctionToString(netcdFileService.getNcFile(), AppFunction.READ_VARIABLE,
+        return functionProcessorService.processFunctionToString(netcdFileService.getNcFile(), AppFunction.READ_VARIABLE,
                 createReadVariableArgs(variableName, sectionSpec));
     }
 
@@ -75,9 +75,8 @@ public class AnalysisService {
     }
 
     public String readRootGroupRaw() {
-
-        var processor = new NcFnProcessor(false);
-        return processor.processFunctionToString(netcdFileService.getNcFile(), AppFunction.READ_ROOT_GROUP, Map.of());
+        return functionProcessorService.processFunctionToString(netcdFileService.getNcFile(),
+                AppFunction.READ_ROOT_GROUP, Map.of());
     }
 
     private static Map<String, String> createReadVariableArgs(String variableName, String sectionSpec) {

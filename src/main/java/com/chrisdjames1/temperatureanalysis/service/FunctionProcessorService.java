@@ -1,38 +1,28 @@
-package com.chrisdjames1.temperatureanalysis;
+package com.chrisdjames1.temperatureanalysis.service;
 
 import com.chrisdjames1.temperatureanalysis.model.value.AppFunction;
 import com.chrisdjames1.temperatureanalysis.model.value.FnAvgVariableArg;
-import com.chrisdjames1.temperatureanalysis.model.value.FnReadVariableArg;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
 import ucar.ma2.IndexIterator;
 import ucar.ma2.InvalidRangeException;
 import ucar.nc2.NetcdfFile;
-import ucar.nc2.NetcdfFiles;
 import ucar.nc2.Variable;
-import ucar.nc2.write.Ncdump;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
-@AllArgsConstructor
-@NoArgsConstructor
-@Deprecated
-public class NcFnProcessor {
+@Service
+public class FunctionProcessorService {
 
-    private boolean doLog = true;
+    private final NetcdReaderService netcdReaderService;
 
-    public void openFileAndProcessFunction(String path, AppFunction function, Map<String, String> fnArgs) {
-        try (NetcdfFile ncFile = NetcdfFiles.open(path)) {
-            processFunctionToString(ncFile, function, fnArgs);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not open " + path, e);
-        }
+    public FunctionProcessorService(NetcdReaderService netcdReaderService) {
+        this.netcdReaderService = netcdReaderService;
     }
 
     public String processFunctionToString(NetcdfFile ncFile, AppFunction function, Map<String, String> fnArgs) {
@@ -40,10 +30,10 @@ public class NcFnProcessor {
         switch(function) {
             case READ_ROOT_GROUP:
                 String rootGroup = ncFile.getRootGroup().toString();
-                info("Root group: {}", rootGroup);
+                log.debug("Root group: {}", rootGroup);
                 return rootGroup;
             case READ_VARIABLE:
-                return readVariableToJsonArrayString(ncFile, fnArgs);
+                return netcdReaderService.readVariableToJsonArrayString(ncFile, fnArgs);
             case AVG_VARIABLE:
                 return avgVariable(ncFile, fnArgs);
             default:
@@ -51,42 +41,6 @@ public class NcFnProcessor {
         }
     }
 
-    private String readVariableToJsonArrayString(NetcdfFile ncFile, Map<String, String> fnArgs) {
-
-        Array data = readVariableToArray(ncFile, fnArgs);
-        String arrayStr = Ncdump.printArray(data, null, null).replaceAll("\\{", "[")
-                .replaceAll("}", "]");
-        info(arrayStr);
-
-        return arrayStr;
-    }
-
-    public Array readVariableToArray(NetcdfFile ncFile, Map<String, String> fnArgs) {
-        String varName = Objects.requireNonNull(fnArgs.get(FnReadVariableArg.VARIABLE.getArg()),
-                String.format("Missing argument '%s' for function '%s'", FnReadVariableArg.VARIABLE.getArg(),
-                        AppFunction.READ_VARIABLE.getFunctionArgValue()));
-        String sectionSpec = Objects.requireNonNull(fnArgs.get(FnReadVariableArg.SECTION_SPEC.getArg()),
-                String.format("Missing argument '%s' for function '%s'", FnReadVariableArg.SECTION_SPEC.getArg(),
-                        AppFunction.READ_VARIABLE.getFunctionArgValue()));
-
-        return readVariableToArray(ncFile, varName, sectionSpec);
-    }
-
-    public Array readVariableToArray(NetcdfFile ncFile, String varName, String sectionSpec) {
-        info("Attempting to read variable '{}' with section-spec '{}'", varName, sectionSpec);
-
-        Variable v = ncFile.findVariable(varName);
-        if (v == null) {
-            throw new RuntimeException("Unable fo find variable " + varName);
-        }
-        try {
-            // sectionSpec is string specifying a potentially multidimensional array range of data, eg ":,1:2,0:3"
-            return v.read(sectionSpec);
-        } catch (IOException | InvalidRangeException e) {
-            throw new RuntimeException("Error reading variable " + varName, e);
-        }
-    }
-    
     private String avgVariable(NetcdfFile ncFile, Map<String, String> fnArgs) {
 
         String varName = Objects.requireNonNull(fnArgs.get(FnAvgVariableArg.VARIABLE.getArg()),
@@ -96,7 +50,7 @@ public class NcFnProcessor {
                 String.format("Missing argument '%s' for function '%s'", FnAvgVariableArg.SECTION_SPEC.getArg(),
                         AppFunction.READ_VARIABLE.getFunctionArgValue()));
 
-        info("Attempting to average variable '{}' with section-spec '{}'", varName, sectionSpec);
+        log.debug("Attempting to average variable '{}' with section-spec '{}'", varName, sectionSpec);
         Variable v = ncFile.findVariable(varName);
         if (v == null) {
             throw new RuntimeException("Unable fo find variable " + varName);
@@ -115,7 +69,7 @@ public class NcFnProcessor {
             } else {
                 throw new IllegalStateException("Cannot average data type: " + dataType);
             }
-            info("Average: " + avg);
+            log.debug("Average: " + avg);
             return String.valueOf(avg);
         } catch (IOException | InvalidRangeException e) {
             throw new RuntimeException("Error averaging variable " + varName, e);
@@ -159,9 +113,4 @@ public class NcFnProcessor {
         }
         return total / count;
     }
-
-    private void info(String message, Object... args) {
-        if (doLog) log.info(message, args);
-    }
-
 }

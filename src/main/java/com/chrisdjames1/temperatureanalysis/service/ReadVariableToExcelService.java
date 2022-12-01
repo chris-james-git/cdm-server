@@ -1,6 +1,5 @@
 package com.chrisdjames1.temperatureanalysis.service;
 
-import com.chrisdjames1.temperatureanalysis.NcFnProcessor;
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmAttribute;
 import com.chrisdjames1.temperatureanalysis.model.cdm.tx.CdmDataAccessLayerTranslator;
 import com.chrisdjames1.temperatureanalysis.util.ShapeUtils;
@@ -35,6 +34,12 @@ import java.util.stream.Collectors;
 @Service
 public class ReadVariableToExcelService {
 
+    private final NetcdReaderService netcdReaderService;
+
+    public ReadVariableToExcelService(NetcdReaderService netcdReaderService) {
+        this.netcdReaderService = netcdReaderService;
+    }
+
     /**
      * Reads a 1D or 2D query on an NC file into to a table in an XLSX file.
      *
@@ -55,7 +60,7 @@ public class ReadVariableToExcelService {
     public String readVariable2dToExcel(NetcdfFile ncFile, String variableName, String sectionSpec,
             @Nullable Integer columnIndexFor1d, @Nullable String fileName) {
 
-        Array data = new NcFnProcessor().readVariableToArray(ncFile, variableName, sectionSpec);
+        Array data = netcdReaderService.readVariableToArray(ncFile, variableName, sectionSpec);
 
         int[] shape = data.getShape();
         int shapeDimensionCount = ShapeUtils.countShapeDimensions(shape);
