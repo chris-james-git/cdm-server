@@ -4,6 +4,7 @@ import com.chrisdjames1.temperatureanalysis.NcFnProcessor;
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmAttribute;
 import com.chrisdjames1.temperatureanalysis.model.cdm.tx.CdmDataAccessLayerTranslator;
 import com.chrisdjames1.temperatureanalysis.util.ShapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -37,9 +38,9 @@ public class ReadVariableToExcelService {
     /**
      * Reads a 1D or 2D query on an NC file into to a table in an XLSX file.
      *
-     * @param ncFile A {@link NetcdfFile} instance.
-     * @param variableName Name of the target variable in the {@link NetcdfFile}.
-     * @param sectionSpec 1D or 2D configured CSV ranges for the target variable e.g "0:2073,141:142,0:0".
+     * @param ncFile           A {@link NetcdfFile} instance.
+     * @param variableName     Name of the target variable in the {@link NetcdfFile}.
+     * @param sectionSpec      1D or 2D configured CSV ranges for the target variable e.g "0:2073,141:142,0:0".
      * @param columnIndexFor1d Index of the dimension to use as the label for the value column when only one dimension
      *                         has a range in the {@code sectionSpec}. Cannot be the same as the index of the dimension
      *                         that has the range. Has no effect on the data output - just affects the column label. For
@@ -48,19 +49,11 @@ public class ReadVariableToExcelService {
      *                         {@code columnIndexFor1d} is 1 then the columns will be titled with the name of the second
      *                         dimension (e.g. latitude) and the column header will be the value of that dimension, i.e
      *                         "141".
-     * @param fileName (optional) Name to give the generated XLSX file.
+     * @param fileName         (optional) Name to give the generated XLSX file.
      * @return The path to the generated XLSX file.
      */
     public String readVariable2dToExcel(NetcdfFile ncFile, String variableName, String sectionSpec,
             @Nullable Integer columnIndexFor1d, @Nullable String fileName) {
-
-        // TODO: Add support for calculating the means across n-1 dimensions. A designated dimension becomes the rows
-        //  with the other dimensions being averaged. For example - changing 2D to 1D average - for a sectionSpec
-        //  "0:2073,140:143,0:0", support a new parameter averageOnIndex. With it having a value of 0, time (0:2073)
-        //  would be the rows and the averages are taken from the rest of the data for each time unit.
-        //  Another example, for a sectionSpec "0:2073,0:180,0:360", setting averageOnIndex=1 would tabulate rows as
-        //  latitude vs. average temperature at that entire latitude (because longitude is full range 0:360) across the
-        //  time units 0:2073.
 
         Array data = new NcFnProcessor().readVariableToArray(ncFile, variableName, sectionSpec);
 
@@ -174,7 +167,8 @@ public class ReadVariableToExcelService {
                 attrCell.setCellValue(attr.getDataType().toString());
                 attrCell.setCellStyle(attrStyle);
                 attrCell = attrRow.createCell(2);
-                attrCell.setCellValue(attr.getValues().stream().map(Object::toString).collect(Collectors.joining(", ")));
+                attrCell.setCellValue(
+                        attr.getValues().stream().map(Object::toString).collect(Collectors.joining(", ")));
                 attrCell.setCellStyle(attrStyle);
             }
 
@@ -280,7 +274,7 @@ public class ReadVariableToExcelService {
             File currDir = new File(".");
             String path = currDir.getAbsolutePath();
             String fileLocation = path.substring(0, path.length() - 1) +
-                    (fileName != null && !fileName.equals("") ? fileName : "temp.xlsx");
+                    (StringUtils.isNotEmpty(fileName) ? fileName : "temp.xlsx");
 
             FileOutputStream outputStream = new FileOutputStream(fileLocation);
             workbook.write(outputStream);
