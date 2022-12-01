@@ -24,9 +24,11 @@ import java.util.Map;
 public class AnalysisService {
 
     private final NetcdFileService netcdFileService;
+    private final ReadVariableToExcelService readVariableToExcelService;
 
-    public AnalysisService(NetcdFileService netcdFileService) {
+    public AnalysisService(NetcdFileService netcdFileService, ReadVariableToExcelService readVariableToExcelService) {
         this.netcdFileService = netcdFileService;
+        this.readVariableToExcelService = readVariableToExcelService;
     }
 
     public String readVariableToString(String variableName, String sectionSpec) {
@@ -46,8 +48,7 @@ public class AnalysisService {
             }
         }
 
-        var processor = new NcFnProcessor(true);
-        return processor.readVariable2dToExcel(netcdFileService.getNcFile(), variableName, sectionSpec,
+        return readVariableToExcelService.readVariable2dToExcel(netcdFileService.getNcFile(), variableName, sectionSpec,
                 columnIndexFor1D, fileName);
     }
 
