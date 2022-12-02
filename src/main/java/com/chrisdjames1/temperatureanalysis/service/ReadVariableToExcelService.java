@@ -2,6 +2,7 @@ package com.chrisdjames1.temperatureanalysis.service;
 
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmAttribute;
 import com.chrisdjames1.temperatureanalysis.model.cdm.tx.CdmDataAccessLayerTranslator;
+import com.chrisdjames1.temperatureanalysis.service.excel.AttributesExcelWriter;
 import com.chrisdjames1.temperatureanalysis.util.ShapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
@@ -29,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 public class ReadVariableToExcelService {
@@ -61,7 +61,6 @@ public class ReadVariableToExcelService {
             @Nullable Integer columnIndexFor1d, @Nullable String fileName) {
 
         Array data = netcdReaderService.readVariableToArray(ncFile, variableName, sectionSpec);
-
         int[] shape = data.getShape();
         int shapeDimensionCount = ShapeUtils.countShapeDimensions(shape);
 
@@ -124,58 +123,13 @@ public class ReadVariableToExcelService {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet(variableName);
 
-            int rowCount = 0;
-
-            // Print the attributes at the top fo the sheet
-
-            CellStyle attrHeaderStyle = workbook.createCellStyle();
-            attrHeaderStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-            attrHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            XSSFFont headerFont = workbook.createFont();
-            headerFont.setFontName("Arial");
-            headerFont.setFontHeightInPoints((short) 11);
-            headerFont.setBold(true);
-            attrHeaderStyle.setFont(headerFont);
-
-            Row attrTitleRow = sheet.createRow(rowCount++);
-            Cell attrTitleCell = attrTitleRow.createCell(0);
-            attrTitleCell.setCellValue("Attributes");
-            attrTitleCell.setCellStyle(attrHeaderStyle);
-
-            Row attrHeaderRow = sheet.createRow(rowCount++);
-            Cell attrHeaderCell = attrHeaderRow.createCell(0);
-            attrHeaderCell.setCellValue("Name");
-            attrHeaderCell.setCellStyle(attrHeaderStyle);
-            attrHeaderCell = attrHeaderRow.createCell(1);
-            attrHeaderCell.setCellValue("Data Type");
-            attrHeaderCell.setCellStyle(attrHeaderStyle);
-            attrHeaderCell = attrHeaderRow.createCell(2);
-            attrHeaderCell.setCellValue("Value");
-            attrHeaderCell.setCellStyle(attrHeaderStyle);
-
-            CellStyle attrStyle = workbook.createCellStyle();
-            attrStyle.setFillForegroundColor(IndexedColors.PALE_BLUE.getIndex());
-            attrStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            XSSFFont dataFont = workbook.createFont();
-            dataFont.setFontName("Arial");
-            dataFont.setFontHeightInPoints((short) 11);
-            dataFont.setBold(false);
-            attrStyle.setFont(dataFont);
-
-            for (CdmAttribute attr : attributes) {
-
-                Row attrRow = sheet.createRow(rowCount++);
-                Cell attrCell = attrRow.createCell(0);
-                attrCell.setCellValue(attr.getName());
-                attrCell.setCellStyle(attrStyle);
-                attrCell = attrRow.createCell(1);
-                attrCell.setCellValue(attr.getDataType().toString());
-                attrCell.setCellStyle(attrStyle);
-                attrCell = attrRow.createCell(2);
-                attrCell.setCellValue(
-                        attr.getValues().stream().map(Object::toString).collect(Collectors.joining(", ")));
-                attrCell.setCellStyle(attrStyle);
-            }
+            // Print the attributes at the top of the sheet
+            AttributesExcelWriter attributesExcelWriter = AttributesExcelWriter.builder().workbook(workbook)
+                    .sheet(sheet).attributes(attributes).rowCount(0).build();
+            int rowCount = attributesExcelWriter.write();
+            XSSFFont headerFont = attributesExcelWriter.getHeaderFont();
+            CellStyle attrHeaderStyle = attributesExcelWriter.getAttrHeaderStyle();
+            CellStyle attrStyle = attributesExcelWriter.getAttrStyle();
 
             if (shape.length > 2) {
 
