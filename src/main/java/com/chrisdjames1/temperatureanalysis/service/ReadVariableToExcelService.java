@@ -187,13 +187,15 @@ public class ReadVariableToExcelService {
 
             // Print the data
             IndexIterator ixIter = data.getIndexIterator();
-
             DataType dataType = data.getDataType();
+            int[] counter;
+            int rowOffset;
+            int colOffset;
             while (ixIter.hasNext()) {
                 Object next = ixIter.next();
-                int[] counter = ixIter.getCurrentCounter();
-                int rowOffset = counter[rowCategoryIndex];
-                int colOffset = counter.length >= columnCategoryIndex + 1 ? counter[columnCategoryIndex] : 0;
+                counter = ixIter.getCurrentCounter();
+                rowOffset = counter[rowCategoryIndex];
+                colOffset = counter.length >= columnCategoryIndex + 1 ? counter[columnCategoryIndex] : 0;
                 Row dataRow = dataRows.get(rowOffset + rowCount);
                 Cell dataCell = dataRow.createCell(colOffset + 1);
 

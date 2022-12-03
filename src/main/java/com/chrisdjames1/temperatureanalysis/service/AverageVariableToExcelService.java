@@ -1,5 +1,6 @@
 package com.chrisdjames1.temperatureanalysis.service;
 
+import com.chrisdjames1.temperatureanalysis.model.TotalCounter;
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmAttribute;
 import com.chrisdjames1.temperatureanalysis.model.cdm.tx.CdmDataAccessLayerTranslator;
 import com.chrisdjames1.temperatureanalysis.service.excel.AttributesExcelWriter;
@@ -7,11 +8,14 @@ import com.chrisdjames1.temperatureanalysis.service.excel.DataHeaderExcelWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import ucar.ma2.Array;
+import ucar.ma2.DataType;
+import ucar.ma2.IndexIterator;
 import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
@@ -20,7 +24,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -71,7 +77,16 @@ public class AverageVariableToExcelService {
         List<Dimension> dimensions = new ArrayList<>(v.getDimensions());
         int rowCategoryIndex = averageOnIndex;
         String rowCategory = dimensions.get(rowCategoryIndex).getName();
-        String columnCategory = String.format("Avg %s", sectionSpec); // TODO? Improve the column category name
+        List<String> sectionSpecWithRowsLabelList = new ArrayList<>();
+        for (int i = 0; i < sectionSpecArr.length; i++) {
+            if (i != averageOnIndex) {
+                sectionSpecWithRowsLabelList.add(sectionSpecArr[i]);
+                continue;
+            }
+            sectionSpecWithRowsLabelList.add("[rows]");
+        }
+
+        String columnCategory = String.format("Avg %s", v.getNameAndDimensions());
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet(variableName);
@@ -91,12 +106,49 @@ public class AverageVariableToExcelService {
 
             // Print the column header for the values column
             Cell columnHeaderCell = dataHeaderExcelWriter.getHeader().createCell(1);
-            columnHeaderCell.setCellValue("Value");
+            // e.g. "[rows],141:142,0:1"
+            columnHeaderCell.setCellValue(String.join(",", sectionSpecWithRowsLabelList));
             columnHeaderCell.setCellStyle(headerStyle);
 
-            // TODO: Print the row category labels
+            Map<Integer, Row> dataRows = new HashMap<>();
+            Map<Integer, TotalCounter> totalCounterMap = new HashMap<>();
 
-            // TODO: Average and print data
+            // Print the row category labels and initialise totalCounterMap
+            for (int i = 0; i < shape[rowCategoryIndex]; i++) {
+                totalCounterMap.put(i, new TotalCounter());
+                Row dataRow = dataRows.computeIfAbsent(i + rowCount, sheet::createRow);
+                Cell rowCategoryCell = dataRow.createCell(0);
+                rowCategoryCell.setCellValue(sectionStarts.get(rowCategoryIndex) + i);
+                rowCategoryCell.setCellStyle(headerStyle);
+            }
+
+            IndexIterator ixIter = data.getIndexIterator();
+            DataType dataType = data.getDataType();
+            int[] counter;
+            int rowOffset;
+            while (ixIter.hasNext()) {
+                Object next = ixIter.next();
+                counter = ixIter.getCurrentCounter();
+                rowOffset = counter[rowCategoryIndex];
+                switch (dataType) {
+                    case DOUBLE:
+                        totalCounterMap.get(rowOffset).add((Double) next);
+                        break;
+                    case FLOAT:
+                        totalCounterMap.get(rowOffset).add((Float) next);
+                        break;
+                    default:
+                        throw new IllegalStateException("Unsupported data type: " + dataType);
+                }
+            }
+
+            // Print the data
+            final int size = totalCounterMap.size();
+            for (rowOffset = 0; rowOffset < size; rowOffset++) {
+                Row dataRow = dataRows.get(rowOffset + rowCount);
+                Cell dataCell = dataRow.createCell(1);
+                dataCell.setCellValue(totalCounterMap.get(rowOffset).average());
+            }
 
             // Write the content to a temporary file
             File currDir = new File(".");
