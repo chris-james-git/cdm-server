@@ -2,65 +2,31 @@ package com.chrisdjames1.temperatureanalysis.service.excel;
 
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmAttribute;
 import lombok.Builder;
-import lombok.Getter;
 import lombok.NonNull;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AttributesExcelWriter {
-
-    @NonNull
-    private final Sheet sheet;
+public class AttributesExcelWriter extends ExcelWriter {
     @NonNull
     private final List<CdmAttribute> attributes;
-    private int rowCount;
-
-    @Getter
-    private XSSFFont headerFont;
-    @Getter
-    private XSSFFont dataFont;
-    @Getter
-    private CellStyle attrHeaderStyle;
-    @Getter
-    private CellStyle attrStyle;
 
     @Builder
     public AttributesExcelWriter(@NonNull XSSFWorkbook workbook, @NonNull Sheet sheet,
-            @NonNull List<CdmAttribute> attributes, int rowCount) {
-        this.sheet = sheet;
+            @NonNull List<CdmAttribute> attributes, int rowCount, @Nullable XSSFFont headerFont,
+            @Nullable XSSFFont dataFont, @Nullable CellStyle attrHeaderStyle, @Nullable CellStyle attrStyle) {
+        super(workbook, sheet, rowCount, headerFont, dataFont, attrHeaderStyle, attrStyle);
         this.attributes = attributes;
-        this.rowCount = rowCount;
-
-        attrHeaderStyle = workbook.createCellStyle();
-        attrHeaderStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-        attrHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        headerFont = workbook.createFont();
-        headerFont.setFontName("Arial");
-        headerFont.setFontHeightInPoints((short) 11);
-        headerFont.setBold(true);
-        attrHeaderStyle.setFont(headerFont);
-
-        attrStyle = workbook.createCellStyle();
-        attrStyle.setFillForegroundColor(IndexedColors.PALE_BLUE.getIndex());
-        attrStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        dataFont = workbook.createFont();
-        dataFont.setFontName("Arial");
-        dataFont.setFontHeightInPoints((short) 11);
-        dataFont.setBold(false);
-        attrStyle.setFont(dataFont);
     }
 
     public int write() {
-
         Row attrTitleRow = sheet.createRow(rowCount++);
         Cell attrTitleCell = attrTitleRow.createCell(0);
         attrTitleCell.setCellValue("Attributes");
@@ -78,7 +44,6 @@ public class AttributesExcelWriter {
         attrHeaderCell.setCellStyle(attrHeaderStyle);
 
         for (CdmAttribute attr : attributes) {
-
             Row attrRow = sheet.createRow(rowCount++);
             Cell attrCell = attrRow.createCell(0);
             attrCell.setCellValue(attr.getName());
@@ -91,7 +56,6 @@ public class AttributesExcelWriter {
                     attr.getValues().stream().map(Object::toString).collect(Collectors.joining(", ")));
             attrCell.setCellStyle(attrStyle);
         }
-
         return rowCount;
     }
 }
