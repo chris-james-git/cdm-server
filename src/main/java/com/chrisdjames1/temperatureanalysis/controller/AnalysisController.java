@@ -42,4 +42,14 @@ public class AnalysisController {
                 fileName), HttpStatus.OK);
     }
 
+    @GetMapping(path = "average/variable/xlsx")
+    public ResponseEntity<String> averageVariableToXlsx(@RequestParam(name = "variable") String variable,
+            @RequestParam(name = "section-spec") String sectionSpec,
+            @RequestParam(name = "average-on-index", required = false) Integer averageOnIndex,
+            @RequestParam(name = "file-name", required = false) String fileName) {
+
+        return new ResponseEntity<>(
+                analysisService.averageVariableToExcel(variable, sectionSpec, averageOnIndex, fileName), HttpStatus.OK);
+    }
+
 }
