@@ -3,15 +3,13 @@ package com.chrisdjames1.temperatureanalysis.service;
 import com.chrisdjames1.temperatureanalysis.model.cdm.dataaccesslayer.CdmAttribute;
 import com.chrisdjames1.temperatureanalysis.model.cdm.tx.CdmDataAccessLayerTranslator;
 import com.chrisdjames1.temperatureanalysis.service.excel.AttributesExcelWriter;
+import com.chrisdjames1.temperatureanalysis.service.excel.DataHeaderExcelWriter;
 import com.chrisdjames1.temperatureanalysis.util.ShapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -127,9 +125,9 @@ public class ReadVariableToExcelService {
             AttributesExcelWriter attributesExcelWriter = AttributesExcelWriter.builder().workbook(workbook)
                     .sheet(sheet).attributes(attributes).rowCount(0).build();
             int rowCount = attributesExcelWriter.write();
-            XSSFFont headerFont = attributesExcelWriter.getHeaderFont();
             CellStyle attrHeaderStyle = attributesExcelWriter.getAttrHeaderStyle();
             CellStyle attrStyle = attributesExcelWriter.getAttrStyle();
+            CellStyle headerStyle = attributesExcelWriter.getHeaderStyle();
 
             if (shape.length > 2) {
 
@@ -161,34 +159,20 @@ public class ReadVariableToExcelService {
             // blank row
             rowCount++;
 
-            // Print the column headers
-            CellStyle headerStyle = workbook.createCellStyle();
-            headerStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setFont(headerFont);
+            DataHeaderExcelWriter dataHeaderExcelWriter = DataHeaderExcelWriter.builder().rowCategory(rowCategory)
+                    .columnCategory(columnCategory).rowCount(rowCount).excelWriter(attributesExcelWriter).build();
+            rowCount = dataHeaderExcelWriter.write();
 
-            if (columnCategory != null && !columnCategory.equals("")) {
-                Row columnCategoryHeader = sheet.createRow(rowCount++);
-                Cell columnCategoryCell = columnCategoryHeader.createCell(1);
-                columnCategoryCell.setCellValue(columnCategory);
-                columnCategoryCell.setCellStyle(headerStyle);
-            }
-
-            Row header = sheet.createRow(rowCount++);
-            Cell headerCell = header.createCell(0);
-            headerCell.setCellValue(rowCategory);
-            headerCell.setCellStyle(headerStyle);
-
-            // Print the column category labels
+            // Print the data column headers
             int max = shapeDimensionCount > 1 ? shape[columnCategoryIndex] : 1;
             for (int col = 0; col < max; col++) {
-                headerCell = header.createCell(col + 1);
+                Cell columnHeaderCell = dataHeaderExcelWriter.getHeader().createCell(col + 1);
                 if (sectionStarts.size() >= columnCategoryIndex + 1) {
-                    headerCell.setCellValue(sectionStarts.get(columnCategoryIndex) + col);
+                    columnHeaderCell.setCellValue(sectionStarts.get(columnCategoryIndex) + col);
                 } else {
-                    headerCell.setCellValue("Value");
+                    columnHeaderCell.setCellValue("Value");
                 }
-                headerCell.setCellStyle(headerStyle);
+                columnHeaderCell.setCellStyle(headerStyle);
             }
 
             Map<Integer, Row> dataRows = new HashMap<>();

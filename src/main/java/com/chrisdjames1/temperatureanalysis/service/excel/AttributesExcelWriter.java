@@ -21,8 +21,9 @@ public class AttributesExcelWriter extends ExcelWriter {
     @Builder
     public AttributesExcelWriter(@NonNull XSSFWorkbook workbook, @NonNull Sheet sheet,
             @NonNull List<CdmAttribute> attributes, int rowCount, @Nullable XSSFFont headerFont,
-            @Nullable XSSFFont dataFont, @Nullable CellStyle attrHeaderStyle, @Nullable CellStyle attrStyle) {
-        super(workbook, sheet, rowCount, headerFont, dataFont, attrHeaderStyle, attrStyle);
+            @Nullable XSSFFont dataFont, @Nullable CellStyle attrHeaderStyle, @Nullable CellStyle attrStyle,
+            @Nullable CellStyle headerStyle) {
+        super(workbook, sheet, rowCount, headerFont, dataFont, attrHeaderStyle, attrStyle, headerStyle);
         this.attributes = attributes;
     }
 
